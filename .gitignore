@@ -1,0 +1,62 @@
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Environment variables — NEVER commit API keys
+.env
+.env.local
+.env.production
+*.env
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+*.egg-info/
+
+# ChromaDB vector store — too large for GitHub, rebuilt by running pipeline.py
+knowledge_base/chroma_store/
+
+# BM25 index — rebuilt by running pipeline.py
+knowledge_base/bm25_index.pkl
+
+# Knowledge base manifest — auto-generated
+knowledge_base/manifest.json
+
+# Raw scraped data — large files, rebuilt by pipeline
+data/raw/*.txt
+
+# Keep the seed file and the Dublin City PDF reference
+!data/raw/schedule2_part1_classes1to7_seed.txt
+!data/raw/.gitkeep
+
+# Processed data
+data/processed/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Logs
+*.log
+logs/
+
+# Large model files
+*.bin
+*.pt
+*.ckpt
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Debug scripts (optional — keep if you want)
+debug_kb.py
+debug_class1.py
