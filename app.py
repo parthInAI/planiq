@@ -117,9 +117,7 @@ with st.sidebar:
 # ── Main content ───────────────────────────────────────────────────────────────
 st.markdown('<div class="main-header">🏠 PlanIQ</div>', unsafe_allow_html=True)
 st.markdown(
-    '<div class="sub-header">AI-powered Irish planning permission guidance — '
-    'built on the Planning and Development Acts, exempted development regulations, '
-    'and Dublin City Council Development Plan 2022-2028.</div>',
+    '<div class="sub-header">AI-powered Irish planning permission guidance — built on Irish planning legislation, 8 ministerial guidelines, and 25 council development plans.</div>',
     unsafe_allow_html=True
 )
 
@@ -183,21 +181,13 @@ if submit and query:
         answer = data["answer"]
 
         # ── Blocked response ──────────────────────
-        # Only truly block if there is NO useful answer content
-        has_useful_answer = (
-            answer.get("full") and
-            isinstance(answer.get("full"), dict) and
-            len(answer.get("full", {})) > 1
-        )
-        if answer["is_blocked"] and not has_useful_answer:
+        if answer["is_blocked"]:
             st.error(f"⚠️ {answer['summary']}")
             st.markdown(
                 f'<div class="disclaimer-box">{answer["disclaimer"]}</div>',
                 unsafe_allow_html=True
             )
             st.stop()
-        elif answer["is_blocked"] and has_useful_answer:
-            st.warning(f"⚠️ {answer['warning'] or answer['summary']}")
 
         # ── Escalation warning ────────────────────
         if answer["escalation"]:
@@ -210,12 +200,7 @@ if submit and query:
         # ── Confidence badge ──────────────────────
         conf      = answer["confidence"]
         conf_css  = f"confidence-{conf}"
-        conf_label = {"high": "High confidence", "medium": "Medium confidence", "low": "Low confidence", "blocked": "Guidance only"}.get(conf, conf)
-        # Override blocked label when we have useful content
-        if conf == "blocked" and answer.get("full"):
-            conf = "low"
-            conf_css = "confidence-low"
-            conf_label = "Low confidence" 
+        conf_label = {"high": "High confidence", "medium": "Medium confidence", "low": "Low confidence"}.get(conf, conf)
 
         st.markdown("---")
         col_a, col_b = st.columns([5, 1])
