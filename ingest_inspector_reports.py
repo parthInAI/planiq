@@ -33,7 +33,7 @@ from knowledge_base.store import PlanIQKnowledgeBase
 console = Console()
 
 REPORTS_DIR          = Path(__file__).parent / "data" / "raw" / "inspector_reports"
-MIN_CHARS_PER_PAGE   = 80
+MIN_CHARS_PER_PAGE   = 40    # Lower than guidelines — inspector reports have short lines
 OCR_TRIGGER_THRESHOLD = 100
 BATCH_SIZE_PAGES     = 50
 
@@ -226,28 +226,250 @@ REPORTS = {
         "key_issues":  ["apartments", "design standards", "parking", "Cork CDP", "accommodation centre", "dual aspect"],
         "notes":       "Apartment development Cork. Design Standards for New Apartments 2023 applied. Parking assessment.",
     },
+
+    # ── Batch 2 — new reports ─────────────────────────────────────────────────
+
+    "r321334": {
+        "title":       "ABP-321334-24 — Protected Structure Section 57, Meath, Thatched Roof, Window Materials",
+        "filename":    "r321334.pdf",
+        "jurisdiction": Jurisdiction.MEATH,
+        "category":    "PS",
+        "year":        2024,
+        "outcome":     "varied",
+        "key_issues":  ["protected structure", "Section 57", "thatched roof", "window materials", "character", "RPS"],
+        "notes":       "Section 57 declaration review. What works materially affect character of protected structure.",
+    },
+    "r321575": {
+        "title":       "ABP-321575-25 — Protected Structure Section 57, Leitrim, Double Glazing, Window Replacement",
+        "filename":    "r321575.pdf",
+        "jurisdiction": Jurisdiction.LEITRIM,
+        "category":    "PS",
+        "year":        2025,
+        "outcome":     "granted",
+        "key_issues":  ["protected structure", "Section 57", "double glazing", "window replacement", "ultra-thin glazing"],
+        "notes":       "Section 57 declaration — ultra-thin double glazing in protected structure windows does not materially affect character.",
+    },
+    "r319086": {
+        "title":       "ABP-319086-24 — Protected Structure, Dublin Ormond Quay, Exempted Development Works",
+        "filename":    "r319086.pdf",
+        "jurisdiction": Jurisdiction.DUBLIN_CITY,
+        "category":    "PS",
+        "year":        2024,
+        "outcome":     "exempted",
+        "key_issues":  ["protected structure", "exempted development", "repair works", "Architectural Heritage Protection Guidelines", "curtilage"],
+        "notes":       "What repair and renewal works are exempt in a protected structure. Architectural Heritage Protection Guidelines 2011.",
+    },
+    "r320125": {
+        "title":       "ABP-320125-24 — Protected Structure, Laois Abbeyleix, Conservation Architect, ACA",
+        "filename":    "r320125.pdf",
+        "jurisdiction": Jurisdiction.LAOIS,
+        "category":    "PS",
+        "year":        2024,
+        "outcome":     "granted",
+        "key_issues":  ["protected structure", "conservation architect", "ACA", "AHIA", "streetscape", "SAC proximity"],
+        "notes":       "Protected structure in ACA Abbeyleix. Conservation architect requirement. Visual impact assessment required.",
+    },
+    "r320517": {
+        "title":       "ABP-320517-24 — Solar Panels on Protected Structure Monastery, Permission Required",
+        "filename":    "r320517.pdf",
+        "jurisdiction": Jurisdiction.NATIONAL,
+        "category":    "PS",
+        "year":        2024,
+        "outcome":     "granted",
+        "key_issues":  ["solar panels", "protected structure", "Class 20F", "exempted development", "monastery", "RPS"],
+        "notes":       "Solar panel exemption Class 20F does NOT apply to protected structures. Full planning permission required.",
+    },
+    "r310098": {
+        "title":       "ABP-310098-21 — Garden Shed Section 5, 25sqm Threshold, Forward of Front Wall, Not Exempt",
+        "filename":    "r310098.pdf",
+        "jurisdiction": Jurisdiction.KILDARE,
+        "category":    "RE",
+        "year":        2021,
+        "outcome":     "not_exempted",
+        "key_issues":  ["garden shed", "Class 3", "25 square metres", "forward of front wall", "Section 5", "not exempted"],
+        "notes":       "Shed forward of front wall of house — fails Class 3 condition. Total shed area also exceeds 25sqm.",
+    },
+    "r315375": {
+        "title":       "ABP-315375-22 — Section 5 Referral, Side vs Rear Extension, What Constitutes Rear",
+        "filename":    "r315375.pdf",
+        "jurisdiction": Jurisdiction.DUBLIN_CITY,
+        "category":    "RE",
+        "year":        2022,
+        "outcome":     "not_exempted",
+        "key_issues":  ["Class 1", "rear extension", "side extension", "what constitutes rear", "Section 5", "private amenity space"],
+        "notes":       "Key case — extension to side of house not to rear. Board analysis of what constitutes rear vs side.",
+    },
+    "r321565": {
+        "title":       "ABP-321565-25 — Section 5, Class 5 Fence Gate, Article 9 Restrictions, DLR",
+        "filename":    "r321565.pdf",
+        "jurisdiction": Jurisdiction.DUN_LAOGHAIRE,
+        "category":    "RE",
+        "year":        2025,
+        "outcome":     "not_exempted",
+        "key_issues":  ["Class 5", "fence", "gate", "Article 9", "public road", "4 metres carriageway", "exempted development"],
+        "notes":       "Gate not exempt under Class 5 — Article 9(1)(a)(ii) restriction applies where road exceeds 4m width.",
+    },
+    "r322265": {
+        "title":       "ABP-322265-25 — Galway City, Shared Accommodation Refused, Apartment Standards",
+        "filename":    "r322265.pdf",
+        "jurisdiction": Jurisdiction.GALWAY_CITY,
+        "category":    "APT",
+        "year":        2025,
+        "outcome":     "refused",
+        "key_issues":  ["shared accommodation", "co-living", "apartment standards", "residential amenity", "Galway City CDP"],
+        "notes":       "Shared accommodation conversion refused. Inadequate residential amenities. Galway City CDP policy applied.",
+    },
+    "r318532": {
+        "title":       "ABP-318532-23 — Dublin Apartment, Residential Amenity, Exempted Development Conditions",
+        "filename":    "r318532.pdf",
+        "jurisdiction": Jurisdiction.DUBLIN_CITY,
+        "category":    "APT",
+        "year":        2023,
+        "outcome":     "granted",
+        "key_issues":  ["apartments", "residential amenity", "exempted development conditions", "change of use", "tenancy"],
+        "notes":       "Apartment development Dublin. Conditions restricting further exempted development above roof level.",
+    },
+    "r315907": {
+        "title":       "ABP-315907-23 — Dublin Clontarf, Apartment Conversion, ACA, Materials",
+        "filename":    "r315907.pdf",
+        "jurisdiction": Jurisdiction.DUBLIN_CITY,
+        "category":    "APT",
+        "year":        2023,
+        "outcome":     "granted",
+        "key_issues":  ["apartment conversion", "ACA", "materials", "roof material", "slate", "residential amenity"],
+        "notes":       "Conversion of dwelling to apartments in ACA. Metal roofing not appropriate in ACA — slate required.",
+    },
+    "r318300": {
+        "title":       "ABP-318300-23 — Commercial Development, Restrictions on Exempted Development",
+        "filename":    "r318300.pdf",
+        "jurisdiction": Jurisdiction.NATIONAL,
+        "category":    "COM",
+        "year":        2023,
+        "outcome":     "granted",
+        "key_issues":  ["commercial development", "exempted development restrictions", "de-exemption", "ESB substation", "plant structure"],
+        "notes":       "Commercial extension with plant structure. Restrictions on exempted development analysed.",
+    },
+    "r318027": {
+        "title":       "ABP-318027-23 — Rural Residential Development 2023",
+        "filename":    "r318027.pdf",
+        "jurisdiction": Jurisdiction.NATIONAL,
+        "category":    "RH",
+        "year":        2023,
+        "outcome":     "refused",
+        "key_issues":  ["rural housing", "genuine local need", "NPO 19", "siting and design"],
+        "notes":       "Rural housing 2023 case.",
+    },
+    "r315858": {
+        "title":       "ABP-315858-23 — Rural Housing, Monaghan, Local Need Satisfied, Siting Granted",
+        "filename":    "r315858.pdf",
+        "jurisdiction": Jurisdiction.MONAGHAN,
+        "category":    "RH",
+        "year":        2023,
+        "outcome":     "granted",
+        "key_issues":  ["rural housing", "local need satisfied", "siting and design", "dormer", "visual impact", "Monaghan CDP"],
+        "notes":       "Rural housing granted. Applicant satisfied local need criteria. Design and siting acceptable.",
+    },
+    "r322360": {
+        "title":       "ABP-322360-25 — Telecommunications Mast, Meath, Rural Area, Visual Impact",
+        "filename":    "r322360.pdf",
+        "jurisdiction": Jurisdiction.MEATH,
+        "category":    "COM",
+        "year":        2025,
+        "outcome":     "granted",
+        "key_issues":  ["telecommunications", "mast", "rural area", "visual impact", "residential amenity"],
+        "notes":       "24.1m telecoms tower Meath. Visual impact and residential amenity assessment.",
+    },
+    "r321454": {
+        "title":       "ABP-321454-24 — Tipperary Meteorological Mast, Class 20A Exemption, 80m Lattice",
+        "filename":    "r321454.pdf",
+        "jurisdiction": Jurisdiction.TIPPERARY,
+        "category":    "COM",
+        "year":        2024,
+        "outcome":     "granted",
+        "key_issues":  ["meteorological mast", "Class 20A", "exempted development", "temporary structure", "80 metre", "lattice mast"],
+        "notes":       "80m temporary meteorological mast erected under Class 20A exemption. Permission sought for continued use.",
+    },
+    "r315039": {
+        "title":       "ABP-315039-22 — Section 5 Referral, Telecoms Foundation, Compliance vs Exemption",
+        "filename":    "r315039.pdf",
+        "jurisdiction": Jurisdiction.NATIONAL,
+        "category":    "RE",
+        "year":        2022,
+        "outcome":     "not_exempted",
+        "key_issues":  ["Section 5", "telecoms", "compliance with conditions", "exempted development", "Narconon Trust v ABP"],
+        "notes":       "Section 5 scope limitations. Board cannot determine if question relates to compliance with conditions not exemption status.",
+    },
+    "r305383": {
+        "title":       "ABP-305383-19 — Solar PV Farm, Tipperary Nenagh, Large Scale Renewable Energy",
+        "filename":    "r305383.pdf",
+        "jurisdiction": Jurisdiction.TIPPERARY,
+        "category":    "COM",
+        "year":        2019,
+        "outcome":     "granted",
+        "key_issues":  ["solar farm", "solar PV", "renewable energy", "large scale", "visual impact", "agricultural land"],
+        "notes":       "Large scale solar PV farm Tipperary. Visual impact, glint and glare, agricultural land use assessment.",
+    },
+    "r500146": {
+        "title":       "ACP-PL-500146 — Protected Structure, Bray Wicklow, Solar Panels, Windows, ACA",
+        "filename":    "r500146.pdf",
+        "jurisdiction": Jurisdiction.WICKLOW,
+        "category":    "PS",
+        "year":        2025,
+        "outcome":     "refused",
+        "key_issues":  ["protected structure", "solar panels", "windows", "ACA", "architectural heritage", "character"],
+        "notes":       "Protected structure Bray. Solar panels refused on protected structure. Window works in ACA.",
+    },
 }
 
 
 # ── PDF extraction ─────────────────────────────────────────────────────────────
 
 def _clean_page_text(text: str) -> str:
+    """
+    Clean extracted page text from inspector reports.
+    Inspector reports often have two-column layouts producing very short lines.
+    We buffer consecutive short lines and join them into paragraphs.
+    """
     if not text:
         return ""
-    lines = text.split("\n")
+    lines  = text.split("\n")
     cleaned = []
+    buffer  = ""
+
     for line in lines:
         stripped = line.strip()
+
+        # Blank line — flush buffer and preserve paragraph break
         if not stripped:
+            if buffer:
+                cleaned.append(buffer.strip())
+                buffer = ""
             cleaned.append("")
             continue
+
+        # Skip noise lines
         if re.match(r'^[\|\s\d]+$', stripped) and len(stripped) < 10:
             continue
         if re.match(r'^[-_=|]{3,}$', stripped):
             continue
-        if len(stripped) < 4:
+        if len(stripped) < 3:
             continue
-        cleaned.append(stripped)
+
+        # Join short lines into paragraphs
+        if len(stripped) < 80 and not stripped[-1] in '.?!:':
+            buffer = (buffer + " " + stripped).strip() if buffer else stripped
+        else:
+            if buffer:
+                buffer = (buffer + " " + stripped).strip()
+                cleaned.append(buffer)
+                buffer = ""
+            else:
+                cleaned.append(stripped)
+
+    # Flush any remaining buffer
+    if buffer:
+        cleaned.append(buffer.strip())
+
     result = "\n".join(cleaned)
     result = re.sub(r'\n{3,}', '\n\n', result)
     result = re.sub(r'\n[ \t]+\n', '\n\n', result)
