@@ -265,18 +265,25 @@ def _clean_page_text(text: str) -> str:
     lines = text.split("\n")
     cleaned = []
     for line in lines:
-        line = line.strip()
-        if not line:
+        stripped = line.strip()
+        # Keep blank lines as paragraph separators — do not skip them
+        if not stripped:
+            cleaned.append("")
             continue
-        if re.match(r'^[\|\s\d]+$', line) and len(line) < 10:
+        if re.match(r'^[\|\s\d]+$', stripped) and len(stripped) < 10:
             continue
-        if re.match(r'^[-_=|]{3,}$', line):
+        if re.match(r'^[-_=|]{3,}$', stripped):
             continue
-        if len(line) < 4:
+        if len(stripped) < 4:
             continue
-        cleaned.append(line)
+        cleaned.append(stripped)
     result = "\n".join(cleaned)
+    # Collapse 3+ newlines to double newline
     result = re.sub(r'\n{3,}', '\n\n', result)
+    # Normalise "newline + spaces + newline" to double newline
+    result = re.sub(r'\n[ \t]+\n', '\n\n', result)
+    # Sentence boundary followed by capital — likely a new paragraph
+    result = re.sub(r'([.!?])\n([A-Z])', r'\1\n\n\2', result)
     return result.strip()
 
 

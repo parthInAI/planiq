@@ -32,12 +32,16 @@ SECTION_PATTERNS = [
     re.compile(r'^(Article\s+\d+[A-Z]?)', re.MULTILINE | re.IGNORECASE),
     # Ministerial guideline chapters: "Chapter 3:" or "3. Design Standards"
     re.compile(r'^(\d+\.\s+[A-Z][a-zA-Z\s]+:?$)', re.MULTILINE),
+    # Development plan chapters: "Chapter 7" or "7.1 Housing" or "Policy Objective H1"
+    re.compile(r'^(?:Chapter\s+\d+|Policy\s+Objective\s+\w+|\d+\.\d+\s+[A-Z])', re.MULTILINE),
+    # Single newline sections: "7.1.1 Standards" style
+    re.compile(r'^(\d+\.\d+\.\d+\s+[A-Z])', re.MULTILINE),
     # Double newline (paragraph boundary — fallback for unstructured text)
     re.compile(r'\n\n+'),
 ]
 
 # Chunk size controls
-MIN_CHUNK_CHARS  = 150    # Too short = noise
+MIN_CHUNK_CHARS  = 80     # Lowered from 150 — dev plan paragraphs are often shorter
 MAX_CHUNK_CHARS  = 2000   # Too long = retrieval precision loss
 OVERLAP_CHARS    = 100    # Overlap between adjacent chunks to preserve context
 
