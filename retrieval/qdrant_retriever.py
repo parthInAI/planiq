@@ -23,7 +23,60 @@ logger = logging.getLogger("planiq.qdrant_retriever")
 
 COLLECTION_NAME    = "planiq"
 DEFAULT_TOP_K      = 7
-RERANKER_CANDIDATE = 20  # retrieve this many then rerank to top_k
+RERANKER_CANDIDATE = 20
+
+
+class ChunkProxy:
+    """
+    Wraps a dict chunk to provide attribute-style access.
+    Makes Qdrant dict chunks compatible with the hallucination detector
+    which expects RetrievedChunk objects with .text, .is_stale, .metadata etc.
+    """
+    def __init__(self, d: dict):
+        self._d = d
+
+    def __getattr__(self, key):
+        if key.startswith("_"):
+            raise AttributeError(key)
+        return self._d.get(key)
+
+    def __getitem__(self, key):
+        return self._d[key]
+
+    def get(self, key, default=None):
+        return self._d.get(key, default)
+
+    @property
+    def text(self) -> str:
+        return self._d.get("text", "")
+
+    @property
+    def is_stale(self) -> bool:
+        return bool(self._d.get("is_stale", False))
+
+    @property
+    def metadata(self) -> dict:
+        return self._d
+
+    @property
+    def source_title(self) -> str:
+        return self._d.get("source_title", "")
+
+    @property
+    def jurisdiction(self) -> str:
+        return self._d.get("jurisdiction", "national")
+
+    @property
+    def section_ref(self) -> str:
+        return self._d.get("section_ref", "")
+
+    @property
+    def effective_date(self):
+        return self._d.get("effective_date")
+
+    @property
+    def score(self) -> float:
+        return float(self._d.get("score", 0.0))
 
 
 @dataclass
@@ -32,6 +85,27 @@ class QdrantRetrievalResult:
     retrieval_quality: float
     latency_ms:        int
     method:            str = "qdrant_dense"
+    query:             str = ""
+    total_dense_hits:  int = 0
+    total_sparse_hits: int = 0
+
+    @property
+    def is_empty(self) -> bool:
+        return len(self.chunks) == 0
+
+    def get_entity_set(self) -> set:
+        """Extract planning entity references from retrieved chunks."""
+        import re
+        entities = set()
+        pattern  = re.compile(
+            r'\b(?:Class\s+\d+[A-Z]?|Article\s+\d+[A-Z]?|Section\s+\d+[A-Z]?'
+            r'|Schedule\s+\d+|S\.I\.\s+No\.\s+\d+|Part\s+[IVX]+)\b',
+            re.IGNORECASE
+        )
+        for chunk in self.chunks:
+            text = chunk.text if hasattr(chunk, "text") else chunk.get("text", "")
+            entities.update(pattern.findall(text))
+        return entities
 
 
 class QdrantRetriever:
@@ -98,11 +172,11 @@ class QdrantRetriever:
         except Exception as e:
             logger.error(f"Qdrant search failed: {e}")
             return QdrantRetrievalResult(chunks=[], retrieval_quality=0.0,
-                                         latency_ms=int((time.time()-start)*1000))
+                                         latency_ms=int((time.time()-start)*1000), query=query)
 
         if not results:
             return QdrantRetrievalResult(chunks=[], retrieval_quality=0.0,
-                                         latency_ms=int((time.time()-start)*1000))
+                                         latency_ms=int((time.time()-start)*1000), query=query)
 
         # ── Convert to chunk dicts ────────────────────────────────────────────
         chunks = []
@@ -121,8 +195,8 @@ class QdrantRetriever:
                 "score":         r.score,
             })
 
-        # Filter stale chunks
-        chunks = [c for c in chunks if not c.get("is_stale", False)]
+        # Filter stale chunks and wrap in ChunkProxy
+        chunks = [ChunkProxy(c) for c in chunks if not c.get("is_stale", False)]
 
         # ── Rerank ────────────────────────────────────────────────────────────
         if use_reranker and len(chunks) > top_k:
@@ -149,4 +223,7 @@ class QdrantRetriever:
             chunks=chunks,
             retrieval_quality=quality,
             latency_ms=elapsed,
+            query=query,
+            total_dense_hits=len(results),
+            total_sparse_hits=0,
         )
