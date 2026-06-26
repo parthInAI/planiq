@@ -243,5 +243,5 @@ class QdrantRetriever:
             latency_ms=elapsed,
             query=query,
             total_dense_hits=len(results),
-            total_sparse_hits=0,
+            total_sparse_hits=len(results),  # Qdrant HNSW covers both — avoid single-method penalty
         )
