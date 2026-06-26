@@ -201,16 +201,19 @@ with tab1:
                 try:
                     start = time.time()
                     jurisdiction = get_jurisdiction(council_slug)
-                    retrieval = retriever.retrieve(query=query.strip(), jurisdiction=jurisdiction, top_k=5, use_reranker=True)
+                    retrieval = retriever.retrieve(query=query.strip(), jurisdiction=jurisdiction, top_k=5, use_reranker=False)
                     chunks = retrieval.chunks if hasattr(retrieval, "chunks") else []
+                    st.info(f"DEBUG: {len(chunks)} chunks retrieved | quality={retrieval.retrieval_quality:.2f} | empty={retrieval.is_empty}")
                     response = engine.generate(query=query.strip(), retrieval_result=retrieval, jurisdiction=council_slug)
                     elapsed = int((time.time() - start) * 1000)
                 except Exception as e:
                     st.error(f"Query failed: {e}")
+                    import traceback
+                    st.error(traceback.format_exc())
                     st.stop()
 
             if response.is_blocked:
-                st.error(f"Blocked: {response.answer_summary}")
+                st.error(f"Blocked: {response.answer_summary} | block_reason={response.block_reason}")
                 st.markdown(f'<div class="disclaimer-box">{response.disclaimer}</div>', unsafe_allow_html=True)
                 st.stop()
 
