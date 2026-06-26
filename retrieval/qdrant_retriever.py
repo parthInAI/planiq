@@ -216,19 +216,7 @@ class QdrantRetriever:
         # Filter stale chunks and wrap in ChunkProxy
         chunks = [ChunkProxy(c) for c in chunks if not c.get("is_stale", False)]
 
-        # ── Rerank ────────────────────────────────────────────────────────────
-        if use_reranker and len(chunks) > top_k:
-            reranker = self._get_reranker()
-            if reranker:
-                try:
-                    pairs  = [(query, c["text"]) for c in chunks]
-                    scores = reranker.predict(pairs)
-                    chunks = [c for _, c in sorted(
-                        zip(scores, chunks), key=lambda x: x[0], reverse=True
-                    )]
-                except Exception as e:
-                    logger.warning(f"Reranker failed: {e}")
-
+        # ── Take top_k by Qdrant score (no reranker on cloud) ────────────────
         chunks = chunks[:top_k]
 
         # Qdrant cosine similarity scores range 0.3-0.7 for good matches.
