@@ -107,6 +107,24 @@ class QdrantRetrievalResult:
             entities.update(pattern.findall(text))
         return entities
 
+    def to_context_string(self) -> str:
+        """Format chunks as structured context string for the LLM prompt."""
+        if self.is_empty:
+            return "No relevant planning law chunks found."
+        parts = []
+        for i, chunk in enumerate(self.chunks, 1):
+            parts.append(
+                f"[CHUNK {i}]\n"
+                f"Source: {chunk.source_title}\n"
+                f"Section: {chunk.section_ref or 'N/A'}\n"
+                f"Jurisdiction: {chunk.jurisdiction}\n"
+                f"Effective: {chunk.effective_date or 'N/A'}\n"
+                f"Confidence: {chunk.get('confidence', 'high') if hasattr(chunk, 'get') else 'high'}\n"
+                f"---\n"
+                f"{chunk.text}\n"
+            )
+        return "\n\n".join(parts)
+
 
 class QdrantRetriever:
     """
