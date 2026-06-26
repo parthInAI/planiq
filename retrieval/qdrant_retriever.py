@@ -176,17 +176,30 @@ class QdrantRetriever:
                 ]
             )
 
-        # ── Search Qdrant ─────────────────────────────────────────────────────
-        n_candidates = RERANKER_CANDIDATE if use_reranker else top_k
+        # ── Search Qdrant (supports both qdrant-client 1.x and 2.x) ─────────
+        n_candidates = top_k * 3
         try:
-            results = self.client.search(
-                collection_name=COLLECTION_NAME,
-                query_vector=query_vector,
-                query_filter=search_filter,
-                limit=n_candidates,
-                with_payload=True,
-                with_vectors=False,
-            )
+            # Try new API first (qdrant-client >= 1.7)
+            if hasattr(self.client, "query_points"):
+                from qdrant_client.models import Filter as QFilter
+                response = self.client.query_points(
+                    collection_name=COLLECTION_NAME,
+                    query=query_vector,
+                    query_filter=search_filter,
+                    limit=n_candidates,
+                    with_payload=True,
+                )
+                results = response.points
+            else:
+                # Fallback for older qdrant-client (1.18.x on Streamlit Cloud)
+                results = self.client.search(
+                    collection_name=COLLECTION_NAME,
+                    query_vector=query_vector,
+                    query_filter=search_filter,
+                    limit=n_candidates,
+                    with_payload=True,
+                    with_vectors=False,
+                )
         except Exception as e:
             logger.error(f"Qdrant search failed: {e}")
             return QdrantRetrievalResult(chunks=[], retrieval_quality=0.0,
