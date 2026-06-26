@@ -231,8 +231,20 @@ class QdrantRetriever:
 
         chunks = chunks[:top_k]
 
-        # ── Quality score ─────────────────────────────────────────────────────
-        quality = min(1.0, results[0].score * 1.2) if results else 0.0
+        # Qdrant cosine similarity scores range 0.3-0.7 for good matches.
+        # Our hallucination detector starts from quality and deducts penalties.
+        # We normalise: 0.5+ cosine = 0.8 quality, 0.4+ = 0.65, below = proportional.
+        raw_score = results[0].score if results else 0.0
+        if raw_score >= 0.55:
+            quality = 0.85
+        elif raw_score >= 0.45:
+            quality = 0.75
+        elif raw_score >= 0.35:
+            quality = 0.65
+        elif raw_score >= 0.25:
+            quality = 0.55
+        else:
+            quality = raw_score * 2.0  # scale up low scores
 
         elapsed = int((time.time() - start) * 1000)
         logger.info(f"QdrantRetriever: {len(chunks)} chunks | quality={quality:.2f} | {elapsed}ms")
