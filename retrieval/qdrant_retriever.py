@@ -1,0 +1,152 @@
+"""
+PlanIQ — Qdrant Cloud Retriever
+=================================
+Replaces local ChromaDB + BM25 retrieval with Qdrant Cloud vector search.
+Used by streamlit_app.py when deployed to Streamlit Cloud.
+
+Differences from HybridRetriever:
+  - Dense search via Qdrant Cloud (remote)
+  - BM25 sparse search removed (not needed for cloud — Qdrant handles it)
+  - Jurisdiction filtering via Qdrant payload filter
+  - Cross-encoder reranker still applied locally
+"""
+
+from __future__ import annotations
+
+import os
+import time
+import logging
+from dataclasses import dataclass, field
+from typing import Optional
+
+logger = logging.getLogger("planiq.qdrant_retriever")
+
+COLLECTION_NAME    = "planiq"
+DEFAULT_TOP_K      = 7
+RERANKER_CANDIDATE = 20  # retrieve this many then rerank to top_k
+
+
+@dataclass
+class QdrantRetrievalResult:
+    chunks:            list[dict]
+    retrieval_quality: float
+    latency_ms:        int
+    method:            str = "qdrant_dense"
+
+
+class QdrantRetriever:
+    """
+    Dense vector retrieval against Qdrant Cloud.
+    Used when QDRANT_URL and QDRANT_API_KEY are set in environment.
+    """
+
+    def __init__(self, qdrant_url: str, qdrant_api_key: str):
+        from qdrant_client import QdrantClient
+        from sentence_transformers import SentenceTransformer
+
+        self.client     = QdrantClient(url=qdrant_url, api_key=qdrant_api_key, timeout=30)
+        self.embedder   = SentenceTransformer("all-MiniLM-L6-v2")
+        self._reranker  = None
+        logger.info(f"QdrantRetriever initialised — collection: {COLLECTION_NAME}")
+
+    def _get_reranker(self):
+        if self._reranker is None:
+            try:
+                from sentence_transformers import CrossEncoder
+                self._reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
+                logger.info("Cross-encoder reranker loaded")
+            except Exception as e:
+                logger.warning(f"Reranker not available: {e}")
+        return self._reranker
+
+    def retrieve(
+        self,
+        query:        str,
+        jurisdiction: Optional[object] = None,
+        top_k:        int = DEFAULT_TOP_K,
+        use_reranker: bool = True,
+    ) -> QdrantRetrievalResult:
+
+        start = time.time()
+
+        # ── Embed query ───────────────────────────────────────────────────────
+        query_vector = self.embedder.encode(query).tolist()
+
+        # ── Build jurisdiction filter ─────────────────────────────────────────
+        search_filter = None
+        if jurisdiction is not None:
+            from qdrant_client.models import Filter, FieldCondition, MatchAny, MatchValue
+            jurisdiction_val = jurisdiction.value if hasattr(jurisdiction, "value") else str(jurisdiction)
+            search_filter = Filter(
+                should=[
+                    FieldCondition(key="jurisdiction", match=MatchValue(value=jurisdiction_val)),
+                    FieldCondition(key="jurisdiction", match=MatchValue(value="national")),
+                ]
+            )
+
+        # ── Search Qdrant ─────────────────────────────────────────────────────
+        n_candidates = RERANKER_CANDIDATE if use_reranker else top_k
+        try:
+            results = self.client.search(
+                collection_name=COLLECTION_NAME,
+                query_vector=query_vector,
+                query_filter=search_filter,
+                limit=n_candidates,
+                with_payload=True,
+                with_vectors=False,
+            )
+        except Exception as e:
+            logger.error(f"Qdrant search failed: {e}")
+            return QdrantRetrievalResult(chunks=[], retrieval_quality=0.0,
+                                         latency_ms=int((time.time()-start)*1000))
+
+        if not results:
+            return QdrantRetrievalResult(chunks=[], retrieval_quality=0.0,
+                                         latency_ms=int((time.time()-start)*1000))
+
+        # ── Convert to chunk dicts ────────────────────────────────────────────
+        chunks = []
+        for r in results:
+            p = r.payload
+            chunks.append({
+                "text":          p.get("text", ""),
+                "source_title":  p.get("source_title", ""),
+                "jurisdiction":  p.get("jurisdiction", "national"),
+                "document_type": p.get("document_type", ""),
+                "section_ref":   p.get("section_ref", ""),
+                "act_year":      p.get("act_year", 0),
+                "effective_date": p.get("effective_date", ""),
+                "confidence":    p.get("confidence", "high"),
+                "is_stale":      p.get("is_stale", False),
+                "score":         r.score,
+            })
+
+        # Filter stale chunks
+        chunks = [c for c in chunks if not c.get("is_stale", False)]
+
+        # ── Rerank ────────────────────────────────────────────────────────────
+        if use_reranker and len(chunks) > top_k:
+            reranker = self._get_reranker()
+            if reranker:
+                try:
+                    pairs  = [(query, c["text"]) for c in chunks]
+                    scores = reranker.predict(pairs)
+                    chunks = [c for _, c in sorted(
+                        zip(scores, chunks), key=lambda x: x[0], reverse=True
+                    )]
+                except Exception as e:
+                    logger.warning(f"Reranker failed: {e}")
+
+        chunks = chunks[:top_k]
+
+        # ── Quality score ─────────────────────────────────────────────────────
+        quality = min(1.0, results[0].score * 1.2) if results else 0.0
+
+        elapsed = int((time.time() - start) * 1000)
+        logger.info(f"QdrantRetriever: {len(chunks)} chunks | quality={quality:.2f} | {elapsed}ms")
+
+        return QdrantRetrievalResult(
+            chunks=chunks,
+            retrieval_quality=quality,
+            latency_ms=elapsed,
+        )
