@@ -1,14 +1,13 @@
 # PlanIQ — Streamlit Cloud requirements
-# Excludes faiss-cpu and chromadb (local-only)
-# Uses Qdrant Cloud for vector search instead
 
 # Core
 streamlit>=1.32.0
 anthropic>=0.25.0
 requests>=2.31.0
 
-# Vector search — Qdrant Cloud
+# Vector search
 qdrant-client>=1.9.0
+chromadb>=0.6.3
 
 # Embeddings and reranking
 sentence-transformers>=2.7.0
