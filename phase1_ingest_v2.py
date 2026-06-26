@@ -254,6 +254,23 @@ COUNCIL_PLANS = {
         "act_year":       2022,
         "skip_if_exists": False,
     },
+    "cavan": {
+        "title":          "Cavan County Development Plan 2022-2028",
+        "files":          ["cavan_devplan_2022.pdf"],
+        "jurisdiction":   Jurisdiction.CAVAN,
+        "effective_date": date(2022, 7, 11),
+        "act_year":       2022,
+        "skip_if_exists": False,
+        "notes":          "Includes Local Area Plan for Cavan Town. Draft Variation No. 1 in progress 2026.",
+    },
+    "offaly": {
+        "title":          "Offaly County Development Plan 2021-2027",
+        "files":          ["offaly_devplan_2021.pdf"],
+        "jurisdiction":   Jurisdiction.OFFALY,
+        "effective_date": date(2021, 10, 1),
+        "act_year":       2021,
+        "skip_if_exists": False,
+    },
 }
 
 
@@ -265,25 +282,18 @@ def _clean_page_text(text: str) -> str:
     lines = text.split("\n")
     cleaned = []
     for line in lines:
-        stripped = line.strip()
-        # Keep blank lines as paragraph separators — do not skip them
-        if not stripped:
-            cleaned.append("")
+        line = line.strip()
+        if not line:
             continue
-        if re.match(r'^[\|\s\d]+$', stripped) and len(stripped) < 10:
+        if re.match(r'^[\|\s\d]+$', line) and len(line) < 10:
             continue
-        if re.match(r'^[-_=|]{3,}$', stripped):
+        if re.match(r'^[-_=|]{3,}$', line):
             continue
-        if len(stripped) < 4:
+        if len(line) < 4:
             continue
-        cleaned.append(stripped)
+        cleaned.append(line)
     result = "\n".join(cleaned)
-    # Collapse 3+ newlines to double newline
     result = re.sub(r'\n{3,}', '\n\n', result)
-    # Normalise "newline + spaces + newline" to double newline
-    result = re.sub(r'\n[ \t]+\n', '\n\n', result)
-    # Sentence boundary followed by capital — likely a new paragraph
-    result = re.sub(r'([.!?])\n([A-Z])', r'\1\n\n\2', result)
     return result.strip()
 
 
